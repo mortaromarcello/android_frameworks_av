@@ -628,6 +628,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
     if (mDataSource->readAt(*offset, hdr, 8) < 8) {
         return ERROR_IO;
     }
+    ALOGV("*offset:0x%llx",*offset);
     uint64_t chunk_size = ntohl(hdr[0]);
     uint32_t chunk_type = ntohl(hdr[1]);
     off64_t data_offset = *offset + 8;
@@ -759,7 +760,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 				}
 				else {
 					*offset = stop_offset;
-                }
+				}
             }
 
             if (*offset != stop_offset) {
@@ -1103,7 +1104,6 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             } else {
                *offset = data_offset + sizeof(buffer);
             }
-
             while (*offset < stop_offset) {
             	if (*offset < stop_offset-8) {
 					status_t err = parseChunk(offset, depth + 1);
@@ -1113,7 +1113,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 				}
 				else {
 					*offset = stop_offset;
-                }
+				}
             }
 
             if (*offset != stop_offset) {
@@ -1170,7 +1170,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             	}
             	else {
             		*offset = stop_offset;
-                }
+            	}
             }
 
             if (*offset != stop_offset) {
@@ -1662,6 +1662,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
 			break;
 		}
+
         case FOURCC('-', '-', '-', '-'):
         {
             mLastCommentMean.clear();
@@ -2296,6 +2297,7 @@ status_t MPEG4Source::read(
         }
 
         isSeekMode = true;
+
         uint32_t sampleIndex;
         ALOGV("seekTimeUs:%lld mTimescale:%d to:%lld",seekTimeUs,mTimescale,seekTimeUs * mTimescale / 1000000);
         status_t err = mSampleTable->findSampleAtTime(
@@ -2355,6 +2357,7 @@ status_t MPEG4Source::read(
 
 			syncSampleIndex = sampleIndex = currSampleIndex;
         }
+
         uint64_t sampleTime;
         if (err == OK) {
             err = mSampleTable->getMetaDataForSample(
@@ -2452,7 +2455,10 @@ status_t MPEG4Source::read(
             mBuffer->set_range(0, size);
             mBuffer->meta_data()->clear();
             mBuffer->meta_data()->setInt64(
-                    kKeyTime, (cts * 1000000) / mTimescale);
+                    kKeyTime, ((int64_t)cts * 1000000) / mTimescale);
+            if (isSeekMode) { //set video offset
+            	mBuffer->meta_data()->setInt64(kKeyOffset, offset);
+            }
 
             if (targetSampleTimeUs >= 0) {
                 mBuffer->meta_data()->setInt64(
@@ -2584,7 +2590,10 @@ status_t MPEG4Source::read(
 
         mBuffer->meta_data()->clear();
         mBuffer->meta_data()->setInt64(
-                kKeyTime, (cts * 1000000) / mTimescale);
+                kKeyTime, ((int64_t)cts * 1000000) / mTimescale);
+        if (isSeekMode) { //set video offset
+        	mBuffer->meta_data()->setInt64(kKeyOffset, offset);
+        }
 
         if (targetSampleTimeUs >= 0) {
             mBuffer->meta_data()->setInt64(

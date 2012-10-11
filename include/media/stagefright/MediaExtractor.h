@@ -38,7 +38,7 @@ public:
     enum GetTrackMetaDataFlags {
         kIncludeExtensiveMetaData = 1,
         kIncludeExtensiveMetaDataBitrate = 256
-    };
+};
     virtual sp<MetaData> getTrackMetaData(
             size_t index, uint32_t flags = 0) = 0;
 

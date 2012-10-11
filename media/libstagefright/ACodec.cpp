@@ -36,16 +36,13 @@
 #ifdef EXYNOS4_ENHANCEMENTS
 #include "sec_format.h"
 #endif
-
 #include <ui/GraphicBufferMapper.h>
-
 namespace android {
 
 static int ALIGN(int x, int y) {
     // y must be a power of 2.
     return (x + y - 1) & ~(y - 1);
 }
-
 template<class T>
 static void InitOMXParams(T *params) {
     params->nSize = sizeof(T);
@@ -655,6 +652,7 @@ status_t ACodec::allocateOutputBuffersFromNativeWindow() {
         info.mStatus = BufferInfo::OWNED_BY_US;
         info.mData = new ABuffer(0);
         info.mGraphicBuffer = graphicBuffer;
+        mBuffers[kPortIndexOutput].push(info);
 
         IOMX::buffer_id bufferId;
         err = mOMX->useGraphicBuffer(mNode, kPortIndexOutput, graphicBuffer,
@@ -966,12 +964,11 @@ status_t ACodec::configureCodec(
         // These are PCM-like formats with a fixed sample rate but
         // a variable number of channels.
 
-        int32_t numChannels, sampleRate;;
-        if (!msg->findInt32("channel-count", &numChannels)
-				|| !msg->findInt32("sample-rate", &sampleRate)) {
+        int32_t numChannels;
+        if (!msg->findInt32("channel-count", &numChannels)) {
             err = INVALID_OPERATION;
         } else {
-            err = setupG711Codec(encoder, numChannels, sampleRate);
+            err = setupG711Codec(encoder, numChannels);
         }
     } else if (!strcasecmp(mime, MEDIA_MIMETYPE_AUDIO_FLAC)) {
         int32_t numChannels, sampleRate, compressionLevel = -1;
@@ -1268,12 +1265,11 @@ status_t ACodec::setupAMRCodec(bool encoder, bool isWAMR, int32_t bitrate) {
             1 /* numChannels */);
 }
 
-status_t ACodec::setupG711Codec(bool encoder, int32_t numChannels,int32_t sampleRate) {
+status_t ACodec::setupG711Codec(bool encoder, int32_t numChannels) {
     CHECK(!encoder);  // XXX TODO
 
     return setupRawAudioFormat(
-            //kPortIndexInput, 8000 /* sampleRate */, numChannels);
-			kPortIndexInput,  sampleRate , numChannels);
+            kPortIndexInput, 8000 /* sampleRate */, numChannels);
 }
 
 status_t ACodec::setupFlacCodec(
@@ -2615,12 +2611,8 @@ void ACodec::BaseState::onInputBufferFilled(const sp<AMessage> &msg) {
                              mCodec->mComponentName.c_str());
                     }
 
-                    //CHECK_LE(buffer->size(), info->mData->capacity());
-                    //memcpy(info->mData->data(), buffer->data(), buffer->size());
-		    if (buffer->size() > info->mData->capacity())
-		    	memcpy(info->mData->data(), buffer->data(), info->mData->capacity());
-		    else
-		    	memcpy(info->mData->data(), buffer->data(), buffer->size());
+                    CHECK_LE(buffer->size(), info->mData->capacity());
+                    memcpy(info->mData->data(), buffer->data(), buffer->size());
                 }
 
                 if (flags & OMX_BUFFERFLAG_CODECCONFIG) {
@@ -3208,8 +3200,7 @@ bool ACodec::LoadedState::onConfigureComponent(
 
     sp<RefBase> obj;
     if (msg->findObject("native-window", &obj)
-    		&& strncmp("OMX.google.", mCodec->mComponentName.c_str(), 11) ){
-            //&& (strncmp("OMX.google.", mCodec->mComponentName.c_str(), 11) || !strncmp("OMX.google.h264", mCodec->mComponentName.c_str(), 15))) {
+            && strncmp("OMX.google.", mCodec->mComponentName.c_str(), 11)) {
         sp<NativeWindowWrapper> nativeWindow(
                 static_cast<NativeWindowWrapper *>(obj.get()));
         CHECK(nativeWindow != NULL);
@@ -3256,7 +3247,6 @@ bool ACodec::LoadedState::onConfigureComponent(
 		                HAL_PIXEL_FORMAT_YV12));
 		}
     }
-
     CHECK_EQ((status_t)OK, mCodec->initNativeWindow());
 
     {

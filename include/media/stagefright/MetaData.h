@@ -183,7 +183,6 @@ enum {
     kKeyCryptoMode        = 'cryM',  // int32_t
     kKeyScreenID 		 = 'scrn',
     kKeyOffset 			 = 'offs'
-
 #ifdef QCOM_HARDWARE
     //Extractor sets this
     kKeyUseArbitraryMode  = 'ArbM'  //bool (int32_t)

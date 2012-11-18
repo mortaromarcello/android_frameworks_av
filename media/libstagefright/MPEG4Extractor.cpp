@@ -1067,7 +1067,6 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
-            uint16_t version = U16_AT(&buffer[8]);
             uint16_t data_ref_index = U16_AT(&buffer[6]);
             uint16_t num_channels = U16_AT(&buffer[16]);
 
@@ -1103,16 +1102,10 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             } else {
                *offset = data_offset + sizeof(buffer);
             }
-
             while (*offset < stop_offset) {
-            	if (*offset < stop_offset-8) {
-					status_t err = parseChunk(offset, depth + 1);
-					if (err != OK) {
-						return err;
-					}
-				}
-				else {
-					*offset = stop_offset;
+                status_t err = parseChunk(offset, depth + 1);
+                if (err != OK) {
+                    return err;
                 }
             }
 
@@ -1141,6 +1134,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
+            uint16_t version = U16_AT(&buffer[8]);
             uint16_t data_ref_index = U16_AT(&buffer[6]);
             uint16_t width = U16_AT(&buffer[6 + 18]);
             uint16_t height = U16_AT(&buffer[6 + 20]);
@@ -1161,15 +1155,25 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
             off64_t stop_offset = *offset + chunk_size;
             *offset = data_offset + sizeof(buffer);
+            ALOGV("mIsQtff:%d version:%d",mIsQtff,version);
+			if (mIsQtff) {
+				if (version==1) {
+					*offset += 4*4;
+				}
+				else if (version==2) {
+					*offset += 4*9;
+				}
+			}
+
             while (*offset < stop_offset) {
             	if (*offset < stop_offset-8) {
 					status_t err = parseChunk(offset, depth + 1);
 					if (err != OK) {
 						return err;
 					}
-            	}
-            	else {
-            		*offset = stop_offset;
+				}
+				else {
+					*offset = stop_offset;
                 }
             }
 
@@ -1448,9 +1452,14 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             off64_t stop_offset = *offset + chunk_size;
             *offset = data_offset + sizeof(buffer);
             while (*offset < stop_offset) {
-                status_t err = parseChunk(offset, depth + 1);
-                if (err != OK) {
-                    return err;
+            	if (*offset < stop_offset-8) {
+					status_t err = parseChunk(offset, depth + 1);
+					if (err != OK) {
+						return err;
+					}
+            	}
+            	else {
+            		*offset = stop_offset;
                 }
             }
 

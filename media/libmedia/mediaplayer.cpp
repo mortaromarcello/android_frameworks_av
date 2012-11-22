@@ -182,7 +182,6 @@ status_t MediaPlayer::setDataSource(
 	    }
             /* add by Gary. end   -----------------------------------}} */
             err = attachNewPlayer(player);
-
         }
     }
     return err;

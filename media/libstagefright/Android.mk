@@ -69,6 +69,11 @@ LOCAL_SRC_FILES:=                         \
         XINGSeeker.cpp                    \
         avc_utils.cpp                     \
 
+ifeq ($(BOARD_USES_STE_FMRADIO),true)
+LOCAL_SRC_FILES+=                         \
+        FMRadioSource.cpp                 \
+        PCMExtractor.cpp
+endif
 ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
 LOCAL_SRC_FILES+=                         \
         ExtendedExtractor.cpp             \
@@ -133,9 +138,12 @@ LOCAL_STATIC_LIBRARIES := \
         libstagefright_timedtext \
         libvpx \
         libstagefright_mpeg2ts \
+        libstagefright_httplive \
         libstagefright_id3 \
         libFLAC \
 
+ifeq ($(call is-vendor-board-platform,QCOM),true)
+endif
 LOCAL_LDFLAGS += \
 	$(TOP)/external/cedarx/CedarAndroidLib/LIB_JB_F23/libstagefright_httplive_opt.a
 

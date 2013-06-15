@@ -306,7 +306,7 @@ status_t StagefrightRecorder::setPreviewSurface(const sp<Surface> &surface) {
 }
 
 status_t StagefrightRecorder::setOutputFile(const char *path) {
-    ALOGI("setOutputFile(const char*) must not be called");
+    ALOGE("setOutputFile(const char*) must not be called");
     // We don't actually support this at all, as the media_server process
     // no longer has permissions to create files.
 
